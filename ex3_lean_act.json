@@ -1,0 +1,8 @@
+{
+    "nl_statement":"(YUG\uff09Let $x_{0}=5$ and $x_{n+1}=x_{n}+\\frac{1} {x_{n}} ~ ( n=0, 1, 2, \\ldots)$ . Prove that $4 5 < x_{1 0 0 0} <$ 45.1.\n",
+    "nl_proof":2,
+    "statement":3,
+    "lean_version":4,
+    "source":5
+}
+
