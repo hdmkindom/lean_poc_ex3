@@ -38,6 +38,20 @@ lemma x_mono (n : ℕ) : x (n + 1) > x n := by
   -- 相加后得出 x (n + 1) > x n
   exact lt_add_of_pos_right (x n) h2
 
+-- 单调性的传递性
+lemma x_mono_le (n m : ℕ) (h : n ≤ m) : x n ≤ x m := by
+  -- 使用 n ≤ m 的证明 h 进行归纳
+  induction h with
+  | refl => rfl -- 基底情况：n = m，x n ≤ x n 是自反的
+  | step h_le_m  ih =>
+    -- 归纳步：假设 n ≤ m 推出 x n ≤ x m
+    -- 我们需要证明 x n ≤ x (m + 1)
+    -- 我们已知 x n ≤ x m (由 ih 得出)
+    rename_i m
+    have h_m_lt_m_succ : x m < x (m + 1) := x_mono m
+    -- 使用不等式的传递性，得出 x n ≤ x (m + 1)
+    exact ih.trans h_m_lt_m_succ.le
+
 -- 对x (n+1) 展开平方
 lemma square_relation (n : ℕ) :
   (x (n + 1)) ^ 2 - (x n) ^ 2 = (1 / x n) ^ 2 + 2 := by
@@ -53,7 +67,7 @@ lemma square_relation (n : ℕ) :
 lemma sum_relation (n : ℕ) :
   (x (n + 1))^2 = 25 + 2 * (n + 1) + ∑ k ∈ Finset.range (n + 1), (1 / (x k)^2) := by
   -- Step 1: 证明伸缩和引理 (通过归纳法)
-  have h21 : (x (n + 1))^2 = (x n)^2 + ∑ k ∈ Finset.range (n + 1), ((x (k + 1))^2 - (x k)^2) := by
+  have h21 : (x (n + 1))^2 = (x 0)^2 + ∑ k ∈ Finset.range (n + 1), ((x (k + 1))^2 - (x k)^2) := by
     -- 用 telescoping（错位相减）基本恒等式
     induction n with
     | zero =>
@@ -62,32 +76,23 @@ lemma sum_relation (n : ℕ) :
     | succ n ih =>
       rw [Finset.sum_range_succ, ih]
       ring
-      sorry
+  have h22 : ∀ k ∈ Finset.range (n + 1), (x (k + 1))^2 - (x k)^2 = (1 / (x k))^2 + 2 := by
+    intros k hk
+    exact square_relation k
+  rw [Finset.sum_congr rfl h22] at h21
+  rw [Finset.sum_add_distrib] at h21
+  have h_sum_two : ∑ x ∈ Finset.range (n + 1), 2 = 2 * (n + 1) := by
+  -- Finset.sum_const 是定理 ∑ c = s.card * c
+    rw [Finset.sum_const]
+    rw [Finset.card_range (n + 1)]
+    rw [smul_eq_mul]
+    rw [mul_comm]
+  -- 不知道为什么无法 rw
+  -- rw [h_sum_two] at h21
+
+  -- simp at h21
+  -- exact h21
   sorry
-
-  -- 使用刚才证明的引理
-
-  -- Step 2: 替换 h21 中的求和项
-
-
-
--- lemma sum_relation (n : ℕ) :
---   (x (n + 1))^2 = 25 + 2 * (n + 1) + ∑ k ∈ Finset.range (n + 1), (1 / (x k)^2) := by
---   have h21 : (x (n + 1))^2 = (x 0)^2 + ∑ k in Finset.range (n + 1), ((x (k + 1))^2 - (x k)^2) := by
---     -- 通过代数操作将求和项移到等式左边，得到 (x (n + 1))^2 - (x 0)^2
---     rw [← add_comm]
---     rw [← sub_eq_iff_eq_add]
---     -- 应用伸缩和引理 Finset.sum_range_sub_neumann
---     apply
---   sorry
-
-
--- induction n with n hx0
-  -- · simp [x, Finset.sum_range_zero]
-  -- · calc
-  --     (x (n + 1 + 1))^2 = (x (n + 1))^2 + (1 / (x (n + 1)))^2 + 2 : square_relation (n + 1)
-  --     ... = 25 + 2 * (n + 1) + ∑ k in Finset.range (n + 1), (1 / (x k)^2) + (1 / (x (n + 1)))^2 + 2 : by rw [hx0]
-  --     ... = 25 + 2 * (n + 2) + ∑ k in Finset.range (n + 2), (1 / (x k)^2) : by simp [Finset.sum_range_succ]
 
 -- 对 x_{1000}^2 做初步整理
 -- 文中 式(7)
@@ -101,7 +106,12 @@ lemma x_1000_square_7 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 1000, (1 / (x
 -- 文中 式(10)
 lemma x_1000_square_10 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 100, (1 / (x k)^2) + ∑ k ∈ Finset.Ico 100 1000, (1 / (x k)^2) := by
   rw [x_1000_square_7]
-  sorry
+  -- 手动分解求和范围
+  have h_split : ∑ k ∈ Finset.range 1000, (1 / (x k)^2) =
+    ∑ k ∈ Finset.range 100, (1 / (x k)^2) + ∑ k ∈ Finset.Ico 100 1000, (1 / (x k)^2) := by
+    exact Finset.sum_range_add_sum_Ico (λ k : ℕ, (1 / (x k)^2 : ℝ)) 100 1000
+  rw [h_split]
+  simp
 
 
 
@@ -134,26 +144,44 @@ lemma lower_bound : (x 1000)^2 > 2025 := by
 
 
 
--- 假设 h56 是一个关于 x 的性质
 
+
+lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 := by
+  intro k
+  have h_mono_le : x 0 ≤ x k := x_mono_le 0 k (Nat.zero_le k)
+  -- 证明 x 0 和 x k 都是非负数
+  have h_sq_le : (x 0)^2 ≤ (x k)^2 := by
+    rw [pow_two, pow_two]
+    have h_x0_nonneg : 0 ≤ x 0 := (x_pos 0).le
+    have h_xk_nonneg : 0 ≤ x k := (x_pos k).le
+    have h_step1 : (x 0) * (x 0) ≤ (x 0) * (x k) := by
+      exact mul_le_mul_of_nonneg_left h_mono_le h_x0_nonneg
+    have h_step2 : (x 0) * (x k) ≤ (x k) * (x k) := by
+      exact mul_le_mul_of_nonneg_right h_mono_le h_xk_nonneg
+    exact le_trans h_step1 h_step2
+  have h_x0_sq_pos : 0 < (x 0)^2 := by
+    exact pow_pos (x_pos 0) 2
+  -- 使用倒数的单调性
+  -- have h_reciprocal : 1 / (x k)^2 ≤ 1 / (x 0)^2 := by
+  exact one_div_le_one_div_of_le h_x0_sq_pos h_sq_le
 
 
 
 -- 证明 x_{1000}^2 < 2033
 lemma upper_bound : (x 1000)^2 < 2033 := by
   rw [x_1000_square_10]
-  have h61 : ∑ k ∈ Finset.range 100, 1 / x k ^ 2 < 4 := by
-    have h62 : ∑ k ∈ Finset.range 100, 1 / x k ^ 2 < 100 / (x 0)^2 := by
+  have h61 : ∑ k ∈ Finset.range 100, 1 / (x k) ^ 2 ≤ 4 := by
+    have h62 : ∑ k ∈ Finset.range 100, 1 / (x k) ^ 2 ≤ 100 / (x 0)^2 := by
+      exact Finset.sum_le_sum (x0_xk_square_reciprocal_le 100)
 
-
--- 最终结论
-theorem final_result : 45 < x 1000 ∧ x 1000 < 45.1 := by
-  have h1 : (x 1000)^2 > 2025 := lower_bound
-  have h2 : (x 1000)^2 < 2033 := upper_bound
-  split
-  · apply Real.sqrt_lt'.mpr
-    · positivity
-    · exact h1
-  · apply Real.lt_sqrt'.mpr
-    · positivity
-    · exact h2
+-- -- 最终结论
+-- theorem final_result : 45 < x 1000 ∧ x 1000 < 45.1 := by
+--   have h1 : (x 1000)^2 > 2025 := lower_bound
+--   have h2 : (x 1000)^2 < 2033 := upper_bound
+--   split
+--   · apply Real.sqrt_lt'.mpr
+--     · positivity
+--     · exact h1
+--   · apply Real.lt_sqrt'.mpr
+--     · positivity
+--     · exact h2
