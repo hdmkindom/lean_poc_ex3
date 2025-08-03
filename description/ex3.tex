@@ -1,0 +1,97 @@
+\documentclass[11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+
+\title{命题证明及形式化拆解}
+\author{hdmkingdom}
+\date{\today}
+
+% 定理环境定义
+\newtheorem{theorem}{命题}
+\newtheorem{lemma}{Lemma}
+\newtheorem{remark}{注}
+\newtheorem{definition}{定义}
+\newtheorem{corollary}{推论}
+
+\begin{document}
+
+\maketitle
+
+\section*{题目（Problem Statement）}
+
+\subsection*{English}
+Let $x_{0}=5$ and $x_{n+1}=x_{n}+\frac{1} {x_{n}} ~ ( n=0, 1, 2, \ldots)$ . 
+
+Prove that $4 5 < x_{1 0 0 0} <$ 45.1
+
+\subsection*{中文}
+设 $x_{0}=5$，且 $x_{n+1}=x_{n}+\frac{1}{x_{n}} ~ (n=0, 1, 2, \ldots)$。
+
+证明：$45 < x_{1000} < 45.1$。
+
+\section*{证明（Proof Sketch）}
+
+1. 两侧平方:
+
+\begin{align}
+x_{n+1}^2 &= x_n^2 + \frac{1}{x_n^2} + 2\\
+x_{n+1}^2 - x_n^2 &= \frac{1}{x_n^2} + 2 \label{eq:formula2}
+\end{align}
+
+2.因为 $x_n > 0$,$x_{n+1} > x_n$,因此:
+
+\begin{align}
+x_{n+1}^2 & = x_0^2 + \sum_{k=0}^{n}(x_{k+1}^2 - x_k^2)\\
+& = x_0^2 + \sum_{k=0}^{n}(\frac{1}{x_k^2} + 2) \\
+& = 25 + 2(n+1) + \sum_{k=0}^{n}\frac{1}{x_k^2} \label{eq:formula5} 
+\end{align}
+
+3. 确定范围 取 $n = 999$
+
+\begin{align}
+x_{100}^2 & = 25 + 2000 + \sum_{k=0}^{999}\frac{1}{x_k^2}\\
+& = 2025 + \sum_{k=0}^{999}\frac{1}{x_k^2} \\
+& > 2025 \\
+& = 45^2
+\end{align}
+
+则小值确定,又
+
+\begin{align}
+x_{100}^2 & = 2025 + \sum_{k=0}^{99}\frac{1}{x_k^2} + \sum_{k=100}^{999}\frac{1}{x_k^2} \\
+& < 2025 + \frac{100}{x_0^2} + \frac{900}{x_100^2} \\
+& < 2033 \\ 
+& < 45.1^2
+\end{align}
+
+则大值确定
+
+\qed
+
+
+\section*{形式化证明步骤（Formal Lemma Decomposition）}
+
+\begin{lemma}
+    由原方程处理两侧平方部分,得到平方差式 $\eqref{eq:formula2}$
+\end{lemma}
+
+\begin{lemma}
+    对 $x_{n+1}^2$ 做处理,得到 $\eqref{eq:formula5}$
+\end{lemma}
+
+\begin{lemma}
+    通过 $n=999$ 的取值,确定 $x_{1000}^2$ 的范围,即得到 $(6) 与 (10)$
+\end{lemma}
+
+\begin{lemma}
+    对 $(6)$ 做处理,得到 $x_{1000}^2 > 2025$,得到小值
+\end{lemma}
+
+\begin{lemma}
+    对 $(10)$ 做处理,得到 $x_{1000}^2 < 2033$,得到大值
+\end{lemma}
+
+结束
+\end{document}
