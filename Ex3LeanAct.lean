@@ -3,6 +3,9 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic
 
+
+namespace Ex3LeanAct
+open Real Nat
 -- 定义全局变量和递归关系
 variable (n : ℕ)
 
@@ -52,7 +55,7 @@ lemma x_mono_le (n m : ℕ) (h : n ≤ m) : x n ≤ x m := by
     -- 使用不等式的传递性，得出 x n ≤ x (m + 1)
     exact ih.trans h_m_lt_m_succ.le
 
--- 对x (n+1) 展开平方
+-- 平方公式,对x (n+1) 展开平方
 lemma square_relation (n : ℕ) :
   (x (n + 1)) ^ 2 - (x n) ^ 2 = (1 / x n) ^ 2 + 2 := by
   have h11 : (x (n + 1)) ^ 2 = (x n) ^ 2 + (1 / x n) ^ 2 + 2 := by
@@ -87,7 +90,8 @@ lemma sum_relation (n : ℕ) :
     rw [Finset.card_range (n + 1)]
     rw [smul_eq_mul]
     rw [mul_comm]
-  -- 不知道为什么无法 rw
+
+  --! 不知道为什么无法 rw
   -- rw [h_sum_two] at h21
 
   -- simp at h21
@@ -104,47 +108,53 @@ lemma x_1000_square_7 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 1000, (1 / (x
   ring
 
 -- 文中 式(10)
-lemma x_1000_square_10 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 100, (1 / (x k)^2) + ∑ k ∈ Finset.Ico 100 1000, (1 / (x k)^2) := by
+
+lemma x_1000_square_10 :
+  (x 1000)^2 =
+  2025 + ∑ k ∈ Finset.range 100, (1 / (x k)^2) + ∑ k ∈ Finset.Ico 100 1000, (1 / (x k)^2) := by
+
   rw [x_1000_square_7]
+
+  -- 明确定义求和函数 f
+  let f : ℕ → ℝ := fun k => 1 / (x k)^2
+
+  have hmn : 100 ≤ 1000 := by simp
+
   -- 手动分解求和范围
-  have h_split : ∑ k ∈ Finset.range 1000, (1 / (x k)^2) =
-    ∑ k ∈ Finset.range 100, (1 / (x k)^2) + ∑ k ∈ Finset.Ico 100 1000, (1 / (x k)^2) := by
-    exact Finset.sum_range_add_sum_Ico (λ k : ℕ, (1 / (x k)^2 : ℝ)) 100 1000
+  have h_split :
+  ∑ k ∈ Finset.range 1000, f k = ∑ k ∈ Finset.range 100, f k + ∑ k ∈ Finset.Ico 100 1000, f k := by
+    -- 直接使用 f
+    exact (Finset.sum_range_add_sum_Ico f hmn).symm
+
   rw [h_split]
-  simp
-
-
-
-
-
-
-
-
+  simp [f]
+  ring
 
 -- 证明 x_{1000}^2 > 2025
 lemma lower_bound : (x 1000)^2 > 2025 := by
   have h51 : ∑ k ∈ Finset.range 1000, (1 / (x k)^2) > 0 := by
-    have h56 : (Finset.range 1000).Nonempty := by
-      use 0 -- Finset.range 1000 包含 0
-      simp
 
-    have h52 : ∀ i : ℕ , 1 / (x i)^2 > 0 := by
-      have h53 : ∀ i : ℕ , (x i)^2 > 0 := by
+    have h52 : ∀ i : ℕ ,0 < 1 / (x i)^2 := by
+      have h53 : ∀ i : ℕ , 0 < (x i)^2 := by
         intro i
         have h54 := x_pos i -- 从 x_pos 引理得出 x i > 0
         exact pow_pos h54 2 -- x i > 0 推导出 (x i)^2 > 0
       intro i
       have h55 := h53 i -- (x i)^2 > 0
       exact one_div_pos.mpr h55 -- (x i)^2 > 0 推到数
-    -- exact Finset.sum_pos h56 h52
-    sorry -- 不知道为什么 Finset.sum_pos 不能直接使用
+
+    have h56 : (Finset.range 1000).Nonempty := by
+      use 0 -- Finset.range 1000 包含 0
+      simp
+
+    have h57 : ∀ i ∈ Finset.range 1000, 0 < 1 / (x i)^2 := by
+      intro i hi
+      exact h52 i
+    -- 第一项 为 范围内均大于0 ; 第二项为集合非空
+    exact Finset.sum_pos h57 h56
+
   rw [x_1000_square_7]
   exact lt_add_of_pos_right 2025 h51
-
-
-
-
-
 
 lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 := by
   intro k
@@ -162,26 +172,84 @@ lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 :
   have h_x0_sq_pos : 0 < (x 0)^2 := by
     exact pow_pos (x_pos 0) 2
   -- 使用倒数的单调性
-  -- have h_reciprocal : 1 / (x k)^2 ≤ 1 / (x 0)^2 := by
   exact one_div_le_one_div_of_le h_x0_sq_pos h_sq_le
+
+lemma x100_xk_square_reciprocal_le :
+  ∀ k ∈ Finset.Ico 100 1000, 1 / (x k) ^ 2 ≤ 1 / (x 100) ^ 2 := by
+  --? 大致等同 x0_xk_square_reciprocal_le
+  sorry
+
+
+--! 严重缺失 下文需要x_100^2的值
+lemma x100_value : (x 100)^2 ≤ 225 := by
+  sorry
 
 
 
 -- 证明 x_{1000}^2 < 2033
-lemma upper_bound : (x 1000)^2 < 2033 := by
+lemma upper_bound : (x 1000)^2 < 2034 := by
   rw [x_1000_square_10]
-  have h61 : ∑ k ∈ Finset.range 100, 1 / (x k) ^ 2 ≤ 4 := by
-    have h62 : ∑ k ∈ Finset.range 100, 1 / (x k) ^ 2 ≤ 100 / (x 0)^2 := by
-      exact Finset.sum_le_sum (x0_xk_square_reciprocal_le 100)
+  have h601 : ∑ k ∈ Finset.range 100, 1 / (x k) ^ 2 ≤ 4 := by
+    have h602 : ∑ k ∈ Finset.range 100, 1 / (x k) ^ 2 ≤ 100 / (x 0)^2 := by
+      have h603 : ∀ k ∈ Finset.range 100, 1 / (x k)^2 ≤ 1 / (x 0)^2 := by
+        intro k hk
+        exact x0_xk_square_reciprocal_le k
 
--- -- 最终结论
--- theorem final_result : 45 < x 1000 ∧ x 1000 < 45.1 := by
---   have h1 : (x 1000)^2 > 2025 := lower_bound
---   have h2 : (x 1000)^2 < 2033 := upper_bound
---   split
---   · apply Real.sqrt_lt'.mpr
---     · positivity
---     · exact h1
---   · apply Real.lt_sqrt'.mpr
---     · positivity
---     · exact h2
+      have h604 : ∑ k ∈ Finset.range 100, 1 / (x 0)^2 = 100 / (x 0)^2 := by
+        rw [Finset.sum_const]
+        rw [Finset.card_range 100]
+        ring
+
+      have h605 : ∑ k ∈ Finset.range 100, 1 / (x k)^2 ≤ ∑ k ∈ Finset.range 100, 1 / (x 0)^2 := by
+        exact Finset.sum_le_sum h603
+
+      exact le_of_le_of_eq h605 h604
+
+    have h606 : 100 / (x 0)^2 = 4 := by
+      rw [x]
+      norm_num
+
+    rw [h606] at h602
+    exact h602
+  have h607 : ∑ k ∈ Finset.Ico 100 1000, 1 / (x k)^2 ≤ 4 := by
+    have h608 : ∑ k ∈ Finset.Ico 100 1000, 1 / (x k)^2 ≤ 900 / (x 100)^2 := by
+      have h609 : ∀ k ∈ Finset.Ico 100 1000, 1 / (x k)^2 ≤ 1 / (x 100)^2 := by
+        intro k hk
+
+        -- ! 不等式传递以及求和范围 Finset.Ico 100 1000 表示困难
+        sorry
+      sorry
+    sorry
+
+  have h_sum : ∑ k ∈ Finset.range 100, 1 / x k ^ 2 + ∑ k ∈ Finset.Ico 100 1000, 1 / x k ^ 2 ≤ 4 + 4 := by
+    exact add_le_add h601 h607
+
+  -- 将 h_sum 应用到整个表达式
+  have h_le_val : (x 1000)^2 ≤ 2025 + (4 + 4) := by
+    rw [x_1000_square_10]
+
+    -- ! 不等式传递
+    sorry
+
+  have h_const_val : 2025 + (4 + 4) = 2033 := by
+    norm_num
+
+  have h_lt_val : 2033 < 2034 := by
+    norm_num
+
+  -- ! 不等式传递
+  sorry
+
+-- 由以上的证明，我们可以得出最终的结论
+theorem final_result : 45 < x 1000 ∧ x 1000 < 45.1 := by
+  have h_pos : 0 < x 1000 := x_pos 1000
+  have h_sqre_2025 : 2025 = (45)^2 := by
+    norm_num
+  have h_square_2034 : (2034 : ℝ ) < (45.1)^2 := by
+    norm_num
+  have h81 : (x 1000)^2 > 2025 := lower_bound
+  have h82 : (x 1000)^2 < 2034 := upper_bound
+  --! 不等式传递 开根号,不会表示
+  sorry
+
+end Ex3LeanAct
