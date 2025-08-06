@@ -48,7 +48,31 @@ x_{n+1}^2 & = x_0^2 + \sum_{k=0}^{n}(x_{k+1}^2 - x_k^2)\\
 & = 25 + 2(n+1) + \sum_{k=0}^{n}\frac{1}{x_k^2} \label{eq:formula5} 
 \end{align}
 
-3. 确定范围 取 $n = 999$
+3. 此处可得到一系列不等式
+
+\[\because x_n > 0, x_{n+1} > x_n\]
+\[\therefore \sum_{k=0}^{n}\frac{1}{x_k^2} > 0\]
+
+\begin{align}
+    \therefore x_{n+1}^2 > 25 + 2(n + 1) \\
+    \therefore x_{n}^2 > 25 + 2n \\
+    \therefore \sum_{k=0}^{n}\frac{1}{x_k^2} < \sum_{k=0}^{n}\frac{1}{25 + 2k} \le \frac{1 + \ln n}{2} \\
+    \therefore \sum_{k=0}^{n}\frac{1}{x_k^2} < \frac{1 + \ln n}{2} \\
+\end{align}
+
+因此可以得到下列不等式:
+
+\begin{align}
+    x_{n}^2 & = 25 + 2n + \sum_{k=0}^{n-1}\frac{1}{x_k^2}\\
+    & > 25 + 2n \\
+\end{align}
+
+\begin{align}
+    x_{n}^2 & = 25 + 2n + \sum_{k=0}^{n-1}\frac{1}{x_k^2}\\
+    & < 25 + 2n + \frac{1 + \ln (n-1)}{2}\\
+\end{align}
+
+4. 确定范围 取 $n = 1000$
 
 \begin{align}
 x_{1000}^2 & = 25 + 2000 + \sum_{k=0}^{999}\frac{1}{x_k^2}\\
@@ -60,9 +84,9 @@ x_{1000}^2 & = 25 + 2000 + \sum_{k=0}^{999}\frac{1}{x_k^2}\\
 则小值确定,又
 
 \begin{align}
-x_{1000}^2 & = 2025 + \sum_{k=0}^{99}\frac{1}{x_k^2} + \sum_{k=100}^{999}\frac{1}{x_k^2} \\
-& < 2025 + \frac{100}{x_0^2} + \frac{900}{x_{100}^2} \\
-& < 2033 \\ 
+x_{1000}^2 & = 2025 + \sum_{k=0}^{999}\frac{1}{x_k^2} \\
+& < 2025 + \frac{1 + \ln (999)}{2} \\
+& < 2029 \\ 
 & < 45.1^2
 \end{align}
 
