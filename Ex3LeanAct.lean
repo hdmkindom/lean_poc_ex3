@@ -20,10 +20,6 @@ noncomputable def x : ℕ → ℝ
 -- lean中无计算超越函数的策略或定理,故此处采用常数近似
 def e_1 : ℝ := 2.7
 
-lemma exp_gt_2_7 : e_1 < Real.exp 1  := by
-  sorry
-
-
 -- 证明 x_n > 0 非负性
 lemma x_pos (n : ℕ) : 0 < x n := by
   induction n with
@@ -153,11 +149,65 @@ lemma x_square_ge (n : ℕ) :
   exact le_of_lt h2
 
 lemma x_square_div_ge (n : ℕ) :
-  1 / (x (n + 1))^2 ≤ 1/(25 + 2 * (n + 1)) := by
-  sorry
+  (1 / (x (n + 1))^2 : ℝ) ≤ 1 / (25 + 2 * ((n : ℕ) + 1)) := by
+  -- 从 x_square_ge 得到 (x (n + 1))^2 ≥ 25 + 2 * (n + 1)
+  have h_square : 1 / (x (n + 1))^2 = (1 / (x (n + 1))) * (1 / (x (n + 1))) := by
+    ring
+  have h_ge : (x (n + 1))^2 ≥ 25 + 2 * (n + 1) := x_square_ge n
+  -- 确保 25 + 2 * (n + 1) > 0
+  have h_pos : 0 < (25 + 2 * (n + 1) : ℝ) := by
+    linarith
+  -- 确保 (x (n + 1))^2 > 0
+  have h_x_sq_pos : 0 < (x (n + 1))^2 := by
+    exact pow_pos (x_pos (n + 1)) 2
+  -- 使用倒数的单调性
+  -- n 是 ℕ,但是在上文计算中被升格为 ℝ
+  exact one_div_le_one_div_of_le h_pos h_ge
 
 -- 求和倒数平方对数证明
-lemma sum_x_square_lt_log (n : ℕ) : ∑ k ∈ Finset.range (n + 1), (1 / (x k)^2) < (1 + Real.log n) / 2 := by
+lemma sum_x_square_lt_log (n : ℕ) (h :n > 0) : ∑ k ∈ Finset.range (n + 1), (1 / (x k)^2) < (1 + Real.log n) / 2 := by
+  -- 需要积分证明
+  have h1 : 1 / (x (n + 1))^2 ≤ 1 / (25 + 2 * (n + 1)) := by
+    exact x_square_div_ge n
+
+  have h2 : (1 : ℝ) / (25 + 2 * (n + 1)) ≤ (1 : ℝ) / (2 * n + 1) := by
+    -- 将 h31 的目标转换为 ℝ 类型
+    have h21 : (25 + 2 * (n + 1) : ℝ) ≥ (2 * n + 1 : ℝ) := by
+      -- norm_cast 会将这个 ℝ 类型的不等式转换为 ℕ 类型
+      norm_cast
+      linarith
+    -- 将 h32 的目标转换为 ℝ 类型
+    have h22 : (0 : ℝ) < (2 * n + 1 : ℝ) := by
+      norm_cast -- norm_cast 也会处理 0 的转换
+      simp
+    -- 现在 h31 和 h32 都是 ℝ 类型的不等式，可以成功应用定理
+    exact one_div_le_one_div_of_le h22 h21
+
+  have h3 : (1 : ℝ) / (2 * n + 1) < (1 : ℝ) / (2 * n) := by
+    have h4 : 0 < ((2 * n) : ℝ) := by
+      simp
+      exact h
+    have h5 : ((2 * n + 1) : ℝ) > ((2 * n) : ℝ):= by
+      simp
+    exact one_div_lt_one_div_of_lt h4 h5
+
+  have h4 : 1 / (x (n + 1))^2 < (1 : ℝ) / (2 * n) := by
+    have h41 : (1 : ℝ) / (x (n + 1))^2 ≤ (1 : ℝ) / (25 + 2 * (n + 1)) := h1
+    have h42 : (1 : ℝ) / (25 + 2 * (n + 1)) ≤ (1 : ℝ) / (2 * n + 1) := h2
+    have h43 : (1 : ℝ) / (2 * n + 1) < (1 : ℝ) / (2 * n) := h3
+    have h44 : (1 : ℝ) / (x (n + 1))^2  ≤  (1 : ℝ) / (2 * n + 1) := by
+      exact le_trans h41 h42
+    exact lt_of_le_of_lt h44 h43
+  have h5 : ∑ k ∈ Finset.range (n + 1), (1 / (x k)^2) < ∑ k ∈ Finset.range (n + 1),(1 : ℝ) / (2 * k) := by
+    have h51 : ∀ k : Finset.range (n + 1) , 1 / (x (k + 1))^2 ≤ (1 : ℝ) / (2 * k) := by
+      intro k
+      sorry
+    have h52 : ∃ k : Finset.range (n + 1), 1 / (x k)^2 < (1 : ℝ) / (2 * k) := by
+      sorry
+    -- exact Finset.sum_lt_sum h51 h52
+    sorry
+
+
   sorry
 
 -- 对 x_{1000}^2 做初步整理
@@ -225,6 +275,8 @@ lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 :
     have h_range : Finset.range 1000 = Finset.range (999 + 1) := by simp
     rw [h_range]
     have h_result := sum_x_square_lt_log 999
+    have exp_gt_2_7 : e_1 < Real.exp 1  := by
+      sorry
     have h1 : (999 : ℝ) < Real.exp 49.2 := by
       have h2 : (999 : ℝ) < e_1 ^ 7 := by
         have h3 : e_1 ^ 7 = 2.7 ^ 7 := rfl
@@ -237,6 +289,9 @@ lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 :
           -- pow_le_pow_of_le (by norm_num) h5 (by norm_num)
           sorry
         have h7 : Real.exp 1 ^ 7 < Real.exp 49.2 := by
+          have h8 : 7 < 49.2 := by
+            sorry
+
           sorry
         sorry
       sorry
@@ -312,7 +367,9 @@ theorem final_result : 45 < x 1000 ∧ x 1000 < 45.1 := by
     norm_num
   have h81 : (x 1000)^2 > 2025 := lower_bound
   have h82 : (x 1000)^2 < 2034 := upper_bound
-  --! 不等式传递 开根号,不会表示
+  apply And.intro
+  -- 证明 x 1000 > 45
+  sorry
   sorry
 
 end Ex3LeanAct
