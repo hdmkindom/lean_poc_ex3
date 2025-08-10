@@ -8,10 +8,13 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
-import Mathlib
--- import Mathlib.Analysis.SumIntegralComparisons.Basic
+
+-- import Mathlib.Analysis.Integration.Integral
+-- import Mathlib.Analysis.Calculus.FundamentalTheorem
 
 -- import Mathlib.Algebra.Order.Basic
+
+-- set_option linter.style.multiGoal false
 
 namespace Ex3LeanAct
 open Real Nat
@@ -24,7 +27,6 @@ noncomputable def x : ℕ → ℝ
 
 -- lean中无计算超越函数的策略或定理,故此处采用常数近似
 def e_1 : ℝ := 2.7
-
 
 -- 证明 x_n > 0 非负性
 lemma x_pos (n : ℕ) : 0 < x n := by
@@ -218,9 +220,15 @@ lemma x_square_div_ge_n (n : ℕ) :
     exact h_convert_cast h_x_square_div_ge
 
 --! 求和倒数平方对数引理证明
-lemma sum_x_square_lt_log_ (n : ℕ) (h : n > 0) :
+lemma sum_x_square_lt_log' (n : ℕ) (h : n > 0) :
 ∑ k ∈ Finset.Ico (1) (n+1),(1 : ℝ) / (2 * k) < (1 + Real.log n) / 2 := by
+  -- 需要积分证明
+  have h0 : n > 0 := by
+    linarith
+  have h1 : ∑ k ∈ Finset.Ico (1) (n+1), (1 : ℝ) / k < 1 + Real.log n := by
+    sorry
   sorry
+
 
 --! 求和倒数平方对数证明
 lemma sum_x_square_lt_log (n : ℕ) (h : n > 1) :
@@ -325,7 +333,7 @@ lemma sum_x_square_lt_log (n : ℕ) (h : n > 1) :
       exact lt_of_eq_of_lt' h_521 h_522
     exact lt_trans h_51 h_52
   have h6 : ∑ k ∈ Finset.Ico 1 (n + 1), (1 : ℝ) / (2 * k) < (1 + Real.log n) / 2 := by
-    exact sum_x_square_lt_log_ n h0
+    exact sum_x_square_lt_log' n h0
   exact lt_trans h5 h6
 
 -- 对 x_{1000}^2 做初步整理
@@ -362,13 +370,58 @@ lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 :
   -- 使用倒数的单调性
   exact one_div_le_one_div_of_le h_x0_sq_pos h_sq_le
 
---! 证明 log 1000 < 7
+-- 证明 log 1000 < 7
 lemma log_1000_lt_7 : Real.log 1000 < 7 := by
   -- 首先，我们需要证明 1000 和 e^7 都是正数。
   have h1 : (0 : ℝ) < 1000 := by norm_num
   have h2 : (0 : ℝ) < Real.exp 7 := exp_pos 7
-
-  sorry
+  rw [log_lt_iff_lt_exp]
+  -- 证明 1000 < e_1^7
+  have h3 : 1000 < e_1 ^ 7 := by
+    rw [e_1]
+    norm_num
+  -- e_1 < Real.expNear 5 1 0
+  have h4 : e_1 < Real.expNear 5 1 0 := by
+    rw [e_1]
+    norm_num
+  -- 证明 e_1^7 < Real.expNear 5 1 0 ^ 7
+  have h5 : e_1^7 < Real.expNear 5 1 0 ^ 7 := by
+    have h51 : e_1 ≤ Real.expNear 5 1 0 := by
+      exact le_of_lt h4
+    have h52 : 0 ≤ e_1 := by
+      rw [e_1]
+      norm_num
+    have h53 : 7 ≠ 0 := by norm_num
+    exact pow_lt_pow_left₀ h4 h52 h53
+  -- Real.expNear 5 1 0 ≤ Real.exp 1
+  have h6 : Real.expNear 5 1 0 ≤ Real.exp 1 := by
+    unfold Real.expNear
+    simp only [mul_zero, add_zero]
+    have h61 : 0 ≤ (1 : ℝ) := by norm_num
+    exact sum_le_exp_of_nonneg h61 5
+  -- Real.expNear 5 1 0 ^ 7 ≤ Real.exp 1 ^ 7
+  have h7 : Real.expNear 5 1 0 ^ 7 ≤ Real.exp 1 ^ 7 := by
+    have h71 : 0 ≤ Real.expNear 5 1 0 := by
+      unfold Real.expNear
+      norm_num
+    have h72 : 0 ≤ Real.exp 1 := by
+      have h721 : 0 < Real.exp 1 := exp_pos 1
+      exact h721.le
+    have h73 : 7 ≠ 0 := by norm_num
+    exact pow_le_pow_left₀ h71 h6 7
+  -- 结合起来,证明 e_1^7 < Real.exp 1^7
+  have h8 : e_1^7 < (Real.exp 1) ^ 7 := by
+    exact lt_of_lt_of_le h5 h7
+  -- 形式相同
+  have h9 : (Real.exp 1) ^ 7 = Real.exp 7 := by
+    exact exp_one_pow 7
+  have h10 : e_1^7 < Real.exp 7 := by
+    rw [h9] at h8
+    exact h8
+  -- 道路顺畅
+  exact lt_trans h3 h10
+  -- 剩下一个小蚂蚁
+  norm_num
 
 -- 证明 x_{1000}^2 < 2033
 lemma upper_bound : (x 1000)^2 < 2034 := by
