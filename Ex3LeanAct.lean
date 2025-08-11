@@ -8,25 +8,33 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
+import Mathlib.NumberTheory.Harmonic.Defs
+import Mathlib.NumberTheory.Harmonic.Bounds
 
--- import Mathlib.Analysis.Integration.Integral
--- import Mathlib.Analysis.Calculus.FundamentalTheorem
-
--- import Mathlib.Algebra.Order.Basic
-
--- set_option linter.style.multiGoal false
+-- 禁止多目标检查
+set_option linter.style.multiGoal false
 
 namespace Ex3LeanAct
+
 open Real Nat
+
 -- 定义全局变量和递归关系
 variable (n : ℕ)
-
+-- 定义 x n 的递归关系
 noncomputable def x : ℕ → ℝ
 | 0       => 5
 | (n + 1) => x n + 1 / x n
 
 -- lean中无计算超越函数的策略或定理,故此处采用常数近似
 def e_1 : ℝ := 2.7
+
+----!
+-- 关于 x n 基本性质证明
+-- 1. 非负性
+-- 2. 单调性
+-- 3. 单调性的传递性
+-- 4. 严格单调性的传递性
+----!
 
 -- 证明 x_n > 0 非负性
 lemma x_pos (n : ℕ) : 0 < x n := by
@@ -70,7 +78,7 @@ lemma x_mono_le (n m : ℕ) (h : n ≤ m) : x n ≤ x m := by
     -- 使用不等式的传递性，得出 x n ≤ x (m + 1)
     exact ih.trans h_m_lt_m_succ.le
 
--- 严格单调性
+-- 严格单调性的传递性
 lemma x_mono_lt (n m : ℕ) (h : n < m) : x n < x m := by
   induction m with
   | zero =>
@@ -86,7 +94,14 @@ lemma x_mono_lt (n m : ℕ) (h : n < m) : x n < x m := by
       -- 如果 n < m，则递归调用
       exact lt_trans (ih h_lt) (x_mono m)
 
--- 平方公式,对x (n+1) 展开平方
+----!
+-- 对x n做初步整理以及抽象
+-- 1. x n 平方公式
+-- 2. x n 累加公式
+-- 3. 求和倒数平方对数不等式 : 由于后面约束 ln 范围
+----!
+
+-- 1.平方公式,对x (n+1) 展开平方
 lemma square_relation (n : ℕ) :
   (x (n + 1)) ^ 2 - (x n) ^ 2 = (1 / x n) ^ 2 + 2 := by
   have h21 : (x (n + 1)) ^ 2 = (x n) ^ 2 + (1 / x n) ^ 2 + 2 := by
@@ -97,7 +112,7 @@ lemma square_relation (n : ℕ) :
   rw [h21]
   ring
 
--- 累加公式
+-- 2.累加公式
 lemma sum_relation (n : ℕ) :
   (x (n + 1))^2 = 25 + 2 * (n + 1) + ∑ k ∈ Finset.range (n + 1), (1 / (x k)^2) := by
   -- Step 1: 证明伸缩和引理 (通过归纳法)
@@ -132,6 +147,15 @@ lemma sum_relation (n : ℕ) :
   simp
   rw [h33]
   ring
+
+-- 3. 求和倒数平方对数引理证明部分,这部分比较长,分为 7 个子lemma
+-- 分别为:
+-- a : 求和倒数平方大于0
+-- b : 平方不等式
+-- c : 类型转换引理
+-- d : 约束n之后的倒数平方不等式
+-- e : 求和倒数平方对数引理证明
+-- f : 求和倒数平方对数证明
 
 -- 求和倒数平方大于0
 lemma sum_x_square_pos (n : ℕ) :
@@ -219,18 +243,40 @@ lemma x_square_div_ge_n (n : ℕ) :
       (1 / (x (n + 1))^2 : ℝ) ≤ 1 / (25 + 2 * ((n : ℕ) + 1)) := x_square_div_ge n
     exact h_convert_cast h_x_square_div_ge
 
---! 求和倒数平方对数引理证明
+-- 求和倒数平方对数引理证明
 lemma sum_x_square_lt_log' (n : ℕ) (h : n > 0) :
-∑ k ∈ Finset.Ico (1) (n+1),(1 : ℝ) / (2 * k) < (1 + Real.log n) / 2 := by
-  -- 需要积分证明
+∑ k ∈ Finset.Ico (1) (n+1),(1 : ℝ) / (2 * k) ≤ (1 + Real.log n) / 2 := by
+  -- 不用积分证明,直接用定理
   have h0 : n > 0 := by
     linarith
-  have h1 : ∑ k ∈ Finset.Ico (1) (n+1), (1 : ℝ) / k < 1 + Real.log n := by
-    sorry
-  sorry
+  have h1 : ∑ k ∈ Finset.Ico (1) (n+1), (1 : ℝ) / k ≤ 1 + Real.log (n) := by
+    have h11 : ∑ k ∈ Finset.Ico (1) (n+1), (1 : ℝ) / k = harmonic (n) := by
+      simp only [harmonic_eq_sum_Icc]
+      simp
+      apply Finset.sum_congr rfl
+      intro x hx
+      simp
+    have h12 : harmonic (n) ≤ 1 + Real.log (n) := by
+      exact harmonic_le_one_add_log (n)
+    exact le_of_le_of_eq' h12 h11
+  have h2 :
+    ∑ k ∈ Finset.Ico 1 (n + 1), (1 : ℝ) / (2 * k) =
+    (1 / 2) * ∑ k ∈ Finset.Ico 1 (n + 1), (1 : ℝ) / k := by
+    -- 使用 Finset.sum_mul 定理
+    rw [Finset.mul_sum]
+    -- 证明 1 / 2 是常数
+    ring_nf
+  have h3 :
+    (1 / 2) * ∑ k ∈ Finset.Ico 1 (n + 1), (1 : ℝ) / k ≤
+    (1 / 2) * (1 + Real.log (n)) := by
+    exact mul_le_mul_of_nonneg_left h1 (by norm_num : (0 : ℝ) ≤ 1 / 2)
+  have h4 :
+    (1 / 2) * (1 + Real.log n) = (1 + Real.log n) / 2 := by
+    -- 使用分数的乘法性质
+    ring_nf
+  exact le_of_eq_of_le' h4 (le_of_le_of_eq' h3 h2)
 
-
---! 求和倒数平方对数证明
+-- 求和倒数平方对数证明
 lemma sum_x_square_lt_log (n : ℕ) (h : n > 1) :
 ∑ k ∈ Finset.range (n), (1 / (x k)^2) < (1 + Real.log n) / 2 := by
   -- 需要积分证明
@@ -332,13 +378,20 @@ lemma sum_x_square_lt_log (n : ℕ) (h : n > 1) :
           linarith
       exact lt_of_eq_of_lt' h_521 h_522
     exact lt_trans h_51 h_52
-  have h6 : ∑ k ∈ Finset.Ico 1 (n + 1), (1 : ℝ) / (2 * k) < (1 + Real.log n) / 2 := by
+  have h6 : ∑ k ∈ Finset.Ico 1 (n + 1), (1 : ℝ) / (2 * k) ≤ (1 + Real.log n) / 2 := by
     exact sum_x_square_lt_log' n h0
-  exact lt_trans h5 h6
+  exact lt_of_lt_of_le h5 h6
 
--- 对 x_{1000}^2 做初步整理
--- 文中 式(7)
-lemma x_1000_square_7 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 1000, (1 / (x k)^2) := by
+-- 接下来对 x_{1000}^2 做初步整理
+
+----!
+-- x 1000 ^2 下界证明
+-- 1. x 1000 ^2 下界不等式,文中 (17)
+-- 2. 证明其大于 2025
+----!
+
+-- 文中 式(17)
+lemma x_1000_square_17 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 1000, (1 / (x k)^2) := by
   have h31 : (x 1000)^2 = 25 + 2 * 1000 + ∑ k ∈ Finset.range 1000, (1 / (x k)^2) := by
     simp [sum_relation 999]
     ring
@@ -349,26 +402,15 @@ lemma x_1000_square_7 : (x 1000)^2 = 2025 + ∑ k ∈ Finset.range 1000, (1 / (x
 lemma lower_bound : (x 1000)^2 > 2025 := by
   have h51 : ∑ k ∈ Finset.range 1000, (1 / (x k)^2) > 0 := sum_x_square_pos 999
 
-  rw [x_1000_square_7]
+  rw [x_1000_square_17]
   exact lt_add_of_pos_right 2025 h51
 
-lemma x0_xk_square_reciprocal_le : ∀ k : ℕ,1 / (x k) ^ 2 ≤ 1 / (x 0) ^ 2 := by
-  intro k
-  have h_mono_le : x 0 ≤ x k := x_mono_le 0 k (Nat.zero_le k)
-  -- 证明 x 0 和 x k 都是非负数
-  have h_sq_le : (x 0)^2 ≤ (x k)^2 := by
-    rw [pow_two, pow_two]
-    have h_x0_nonneg : 0 ≤ x 0 := (x_pos 0).le
-    have h_xk_nonneg : 0 ≤ x k := (x_pos k).le
-    have h_step1 : (x 0) * (x 0) ≤ (x 0) * (x k) := by
-      exact mul_le_mul_of_nonneg_left h_mono_le h_x0_nonneg
-    have h_step2 : (x 0) * (x k) ≤ (x k) * (x k) := by
-      exact mul_le_mul_of_nonneg_right h_mono_le h_xk_nonneg
-    exact le_trans h_step1 h_step2
-  have h_x0_sq_pos : 0 < (x 0)^2 := by
-    exact pow_pos (x_pos 0) 2
-  -- 使用倒数的单调性
-  exact one_div_le_one_div_of_le h_x0_sq_pos h_sq_le
+----!
+-- 对 x_1000 ^2 的上界证明
+-- 1. ln 1000 < 7约束
+-- 2. x 1000 ^2 下界不等式,文中 (22)
+----!
+
 
 -- 证明 log 1000 < 7
 lemma log_1000_lt_7 : Real.log 1000 < 7 := by
@@ -425,7 +467,7 @@ lemma log_1000_lt_7 : Real.log 1000 < 7 := by
 
 -- 证明 x_{1000}^2 < 2033
 lemma upper_bound : (x 1000)^2 < 2034 := by
-  rw [x_1000_square_7]
+  rw [x_1000_square_17]
   have h1 : ∑ k ∈ Finset.range 1000, 1 / x k ^ 2 < (1 + Real.log 1000) / 2 :=
     sum_x_square_lt_log 1000 (by norm_num)
   have h2 : (1 + Real.log 1000) / 2 < 8 := by
@@ -450,6 +492,13 @@ lemma upper_bound : (x 1000)^2 < 2034 := by
     have h42 : 2025 + 8 < (2034 : ℝ) := by norm_num
     exact lt_trans h41 h42
   exact lt_trans h3 h4
+
+----!
+-- 定理的综合
+-- 1. 结合上述平方上下届证明
+-- 2. x 1000 下界证明
+-- 3. x 1000 上界证明
+----!
 
 -- 由以上的证明，我们可以得出最终的结论
 theorem final_result : 45 < x 1000 ∧ x 1000 < 45.1 := by

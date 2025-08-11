@@ -4,16 +4,62 @@
 
 ## 题目以及证明以及lemma拆解 位于 description
 
+1. 不等式放缩,比较困难的是 调和级数与ln上界难找
+
+2. ln 1000 难写
+
 ## lean4 证明 位于 EX3LeanAct.lean
 
-## GitHub configuration
+### 1. 第一部分: $x_n$ 的基本性质
 
-To set up your new GitHub repository, follow these steps:
+#### **Lemma 1: 非负性**
+证明 $x_n > 0$
 
-* Under your repository name, click **Settings**.
-* In the **Actions** section of the sidebar, click "General".
-* Check the box **Allow GitHub Actions to create and approve pull requests**.
-* Click the **Pages** section of the settings sidebar.
-* In the **Source** dropdown menu, select "GitHub Actions".
+#### **Lemma 2: 单调性**
+证明 $x_{n+1} > x_n$
 
-After following the steps above, you can remove this section from the README file.
+#### **Lemma 3: 单调性的传递性**
+证明 $x_n \leq x_m$
+
+#### **Lemma 4: 严格单调性的传递性**
+证明 $x_n < x_m$
+
+---
+
+### 2. 第二部分: 对 $x_n$ 做初步整理以及抽象
+
+#### **Lemma 5: 平方公式**
+由原方程处理两侧平方部分，得到平方公式 (1)。
+
+#### **Lemma 6: 累加公式**
+对 $x_{n+1}^2$ 做处理，得到公式 (2)。
+
+#### **Lemma 7: 求和倒数平方对数不等式**
+得到公式 (3)。
+
+---
+
+### 3. 第三部分: $x_{1000}^2$ 下界证明
+
+#### **Lemma 8: $x_{1000}^2$ 下界不等式**
+通过 $n=999$ 的取值，确定 $x_{1000}^2$ 的范围，得到公式 (17)。
+
+#### **Lemma 9: $x_{1000}^2 > 2025$**
+通过公式 (17) 的处理，得到小值。
+
+---
+
+### 4. 第四部分: $x_{1000}^2$ 上界证明
+
+#### **Lemma 10: $\ln 1000 < 7$ 约束**
+
+#### **Lemma 11: $x_{1000}^2$ 上界不等式**
+通过对公式 (21) 做处理，得到上界 (22)。
+
+---
+
+### 5. 第五部分: 组合引理
+
+#### **Theorem: 定理的综合**
+结合上述平方上下界证明，得到 $x_{1000}^2$ 的范围。
+

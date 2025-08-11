@@ -1,8 +1,10 @@
 {
     "nl_statement":"(YUG\uff09Let $x_{0}=5$ and $x_{n+1}=x_{n}+\\frac{1} {x_{n}} ~ ( n=0, 1, 2, \\ldots)$ . Prove that $4 5 < x_{1 0 0 0} <$ 45.1.\n",
-    "nl_proof":2,
+    "nl_proof":"1. Square both sides: $x_{n+1}^2 = x_n^2 + \\frac{1}{x_n^2} + 2$. 2. Use summation: $x_{n+1}^2 = x_0^2 + \\sum_{k=0}^{n}(x_{k+1}^2 - x_k^2) = 25 + 2(n+1) + \\sum_{k=0}^{n}\\frac{1}{x_k^2}$. 3. Derive inequalities: $x_{n+1}^2 > 25 + 2(n+1)$ and $\\sum_{k=0}^{n}\\frac{1}{x_k^2} < \\frac{1 + \\ln n}{2}$. 4. For $n=1000$, calculate bounds: $x_{1000}^2 > 2025$ and $x_{1000}^2 < 2029$, leading to $45 < x_{1000} < 45.1$.",
     "statement":3,
-    "lean_version":4,
+    "lean_version":[
+        "leanprover/lean4:v4.17.0",
+        "commit的版本记录"],
     "source":5
 }
 
